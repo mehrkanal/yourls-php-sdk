@@ -4,6 +4,7 @@ namespace Mehrkanal\YourlsPhpSdkTest;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use Mehrkanal\YourlsPhpSdk\FindLongUrlResponse;
 use Mehrkanal\YourlsPhpSdk\YourlsGlobalStats;
 use Mehrkanal\YourlsPhpSdk\YourlsSDK;
 use Mehrkanal\YourlsPhpSdk\YourlsUrlStats;
@@ -108,5 +109,31 @@ class YourlsSDKTest extends TestCase
         $this->assertInstanceOf(YourlsGlobalStats::class, $stats);
         $this->assertSame(2000, $stats->getTotalClicks());
         $this->assertSame(1000, $stats->getTotalLinks());
+    }
+
+    public function testFindShortUrlsByLongUrl(): void
+    {
+        $mockClient = $this->createMock(Client::class);
+        $mockClient
+            ->method('post')
+            ->willReturn(
+                new Response(200, [], json_encode([
+                    'statusCode' => 200,
+                    'message' => 'success',
+                    'keywords' => [
+                        '1x1',
+                        '2b2',
+                    ],
+                ], JSON_THROW_ON_ERROR)),
+            );
+
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
+        $reflection = new ReflectionProperty($sdk, 'client');
+        $reflection->setAccessible(true);
+        $reflection->setValue($sdk, $mockClient);
+
+        $longUrlResponse = $sdk->findShortUrlsByLongUrl('https://example.com/directory/a');
+        $this->assertInstanceOf(FindLongUrlResponse::class, $longUrlResponse);
+        $this->assertSame(['http://sho.rt/1x1', 'http://sho.rt/2b2'], $longUrlResponse->shortUrls());
     }
 }

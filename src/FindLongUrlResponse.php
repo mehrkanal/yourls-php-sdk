@@ -15,7 +15,7 @@ class FindLongUrlResponse
         }
     }
 
-    public function findShortUrls(): array
+    public function shortUrls(): array
     {
         return $this->shortUrls;
     }
