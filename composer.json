@@ -6,7 +6,8 @@
         "psr-4": {
             "Mehrkanal\\YourlsPhpSdk\\": "src/"
         }
-    },    "autoload-dev": {
+    },
+    "autoload-dev": {
         "psr-4": {
             "Mehrkanal\\YourlsPhpSdkTest\\": "tests/"
         }
@@ -35,6 +36,7 @@
         "rector/rector": "^1.2",
         "symplify/easy-coding-standard": "^12.0.0",
         "phpstan/phpstan": "^1.9.6",
-        "jetbrains/phpstorm-attributes": "^1.1"
+        "jetbrains/phpstorm-attributes": "^1.1",
+        "symfony/var-dumper": "*"
     }
 }
