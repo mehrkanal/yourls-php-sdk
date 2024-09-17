@@ -109,6 +109,6 @@ class YourlsSDKTest extends TestCase
         $this->assertSame([
             0 => 'http://sho.rt/1x1',
             1 => 'http://sho.rt/2b2',
-        ], $shortUrlsByLongUrl->findShortUrls());
+        ], $shortUrlsByLongUrl->shortUrls());
     }
 }
