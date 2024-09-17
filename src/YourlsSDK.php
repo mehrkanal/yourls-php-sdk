@@ -5,34 +5,45 @@ namespace Mehrkanal\YourlsPhpSdk;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Psr7\Response;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\FindLongUrl;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\General;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\GlobalStats;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\UrlStats;
 use RuntimeException;
 use Throwable;
 
 class YourlsSDK
 {
     private const API_STATS = 'stats';
+
     private const API_URL_STATS = 'url-stats';
+
     private const API_EXPAND_SHORT_URL = 'expand';
+
     private const API_GENERATE_SHORT_URL = 'shorturl';
+
     private const API_DELETE_SHORT_URL = 'delete';
+
     private const API_LOOKUP_URL_SUBSTR = 'lookup-url-substr';
+
     private const API_UPDATE_SHORT_URL = 'update';
 
     private Client $client;
+
+    private float $timeout = 10.0;
 
     public function __construct(
         private string $apiUrl,
         private readonly string $username,
         private readonly string $password,
-        float $timeout = 10.0,
+        Client $client = null,
     ) {
         if (!str_starts_with($this->apiUrl, 'http')) {
             throw new RuntimeException('You must use http request method');
         }
         $this->apiUrl = rtrim($this->apiUrl, '/');
-        $this->client = new Client([
+        $this->client = $client ?: new Client([
             'base_uri' => $this->apiUrl,
-            'timeout' => $timeout,
         ]);
     }
 
@@ -63,8 +74,8 @@ class YourlsSDK
         // Return already existing ShortURL
         if (!$response->isValid() && is_array($response->getBodyValueByKey('url'))) {
             return $this->getYourlsDomainFromApiUrl($this->apiUrl) . '/' . $response->getBodyValueByKey(
-                    'url',
-                )['keyword'];
+                'url',
+            )['keyword'];
         }
 
         if (!$response->isValid()) {
@@ -102,7 +113,7 @@ class YourlsSDK
      *
      * @param string $shortUrl The short URL to get statistics for.
      */
-    public function getShortUrlStats(string $shortUrl): YourlsUrlStats
+    public function getShortUrlStats(string $shortUrl): UrlStats
     {
         $params = [
             'action' => self::API_URL_STATS,
@@ -116,7 +127,7 @@ class YourlsSDK
             throw new RuntimeException(__FUNCTION__ . ' for ' . $shortUrl . PHP_EOL . $response->getMessage());
         }
 
-        return new YourlsUrlStats($response);
+        return new UrlStats($response);
     }
 
     /**
@@ -143,7 +154,7 @@ class YourlsSDK
         return $response->getBody();
     }
 
-    public function getGlobalStats(): YourlsGlobalStats
+    public function getGlobalStats(): GlobalStats
     {
         $params = [
             'action' => 'db-stats',
@@ -156,7 +167,7 @@ class YourlsSDK
             throw new RuntimeException(__FUNCTION__ . PHP_EOL . $response->getMessage());
         }
 
-        return new YourlsGlobalStats($response);
+        return new GlobalStats($response);
     }
 
     public function deleteByShortUrl(string $shortUrl): void
@@ -175,7 +186,12 @@ class YourlsSDK
         }
     }
 
-    public function findShortUrlsByLongUrl(string $longUrl): FindLongUrlResponse
+    public function setTimeout(float $timeout): void
+    {
+        $this->timeout = $timeout;
+    }
+
+    public function findShortUrlsByLongUrl(string $longUrl): FindLongUrl
     {
         $params = [
             'action' => self::API_LOOKUP_URL_SUBSTR,
@@ -188,7 +204,7 @@ class YourlsSDK
             throw new RuntimeException(__FUNCTION__ . ' for ' . $longUrl . PHP_EOL . $response->getMessage());
         }
 
-        return new FindLongUrlResponse($response, $this->getYourlsDomainFromApiUrl($this->apiUrl));
+        return new FindLongUrl($response, $this->getYourlsDomainFromApiUrl($this->apiUrl));
     }
 
     public function updateShortUrlTarget(string $shortUrl, string $targetUrl): void
@@ -229,19 +245,20 @@ class YourlsSDK
         return $request;
     }
 
-    private function sendRequest(array $yourlsApiParams): YourlsResponse
+    private function sendRequest(array $yourlsApiParams): General
     {
         $yourlsApiParams = $this->addCredentials($yourlsApiParams);
         try {
             $response = $this->client->post('', [
                 'form_params' => $yourlsApiParams,
+                'timeout' => $this->timeout,
             ]);
         } catch (RequestException $e) {
             $response = $e->getResponse();
         } catch (Throwable $e) {
             $response = new Response(500, [], '{"message" : "' . $e->getMessage() . '"}', '1.1');
         } finally {
-            return new YourlsResponse($response ?? new Response(500, [], '{"message" : "unknown error"}', '1.1'));
+            return new General($response ?? new Response(500, [], '{"message" : "unknown error"}', '1.1'));
         }
     }
 }

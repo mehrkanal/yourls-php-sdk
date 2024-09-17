@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Mehrkanal\YourlsPhpSdk;
+namespace Mehrkanal\YourlsPhpSdk\YourlsResponse;
 
-class YourlsGlobalStats
+class GlobalStats
 {
     private int $totalLinks;
 
     private int $totalClicks;
 
-    public function __construct(YourlsResponse $response)
+    public function __construct(General $response)
     {
         $dbstats = $response->getBody()['db-stats'];
         $this->totalLinks = (int) $dbstats['total_links'];

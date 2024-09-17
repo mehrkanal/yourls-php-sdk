@@ -2,66 +2,54 @@
 
 namespace Mehrkanal\YourlsPhpSdkTest;
 
+use Codeception\Stub;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
-use Mehrkanal\YourlsPhpSdk\FindLongUrlResponse;
-use Mehrkanal\YourlsPhpSdk\YourlsGlobalStats;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\FindLongUrl;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\GlobalStats;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\UrlStats;
 use Mehrkanal\YourlsPhpSdk\YourlsSDK;
-use Mehrkanal\YourlsPhpSdk\YourlsUrlStats;
 use PHPUnit\Framework\TestCase;
-use ReflectionProperty;
 
 class YourlsSDKTest extends TestCase
 {
-    public function testGenerateShortUrl(): void
+    public function testCreateShortUrl(): void
     {
-        $mockClient = $this->createMock(Client::class);
-        $mockClient
-            ->method('post')
-            ->willReturn(
-                new Response(200, [], json_encode([
+        $mockClient = Stub::make(Client::class, [
+            'post' => function () {
+                return new Response(200, [], json_encode([
                     'status' => 'success',
                     'shorturl' => 'http://sho.rt/1f',
-                ], JSON_THROW_ON_ERROR)),
-            );
+                ]));
+            },
+        ]);
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $shortUrl = $sdk->generateShortUrl('http://example.com');
         $this->assertSame('http://sho.rt/1f', $shortUrl);
     }
 
     public function testExpandShortUrl(): void
     {
-        $mockClient = $this->createMock(Client::class);
-        $mockClient
-            ->method('post')
-            ->willReturn(
-                new Response(200, [], json_encode([
+        $mockClient = Stub::make(Client::class, [
+            'post' => function () {
+                return new Response(200, [], json_encode([
                     'statusCode' => 200,
                     'longurl' => 'http://example.com',
-                ], JSON_THROW_ON_ERROR)),
-            );
+                ]));
+            },
+        ]);
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $longUrl = $sdk->expandShortUrl('short-keyword');
         $this->assertSame('http://example.com', $longUrl);
     }
 
-    public function testGetShortUrlStats(): void
+    public function testGetUrlStats(): void
     {
-        $mockClient = $this->createMock(Client::class);
-        $mockClient
-            ->method('post')
-            ->willReturn(
-                new Response(200, [], json_encode([
+        $mockClient = Stub::make(Client::class, [
+            'post' => function () {
+                return new Response(200, [], json_encode([
                     'statusCode' => 200,
                     'message' => 'success',
                     'link' => [
@@ -71,69 +59,56 @@ class YourlsSDKTest extends TestCase
                         'url' => 'http://example.com',
                         'shorturl' => '1',
                     ],
-                ], JSON_THROW_ON_ERROR)),
-            );
+                ], JSON_THROW_ON_ERROR));
+            },
+        ]);
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $stats = $sdk->getShortUrlStats('short-keyword');
-        $this->assertInstanceOf(YourlsUrlStats::class, $stats);
+        $this->assertInstanceOf(UrlStats::class, $stats);
         $this->assertSame(2, $stats->getClicks());
     }
 
     public function testGetGlobalStats(): void
     {
-        $mockClient = $this->createMock(Client::class);
-        $mockClient
-            ->method('post')
-            ->willReturn(
-                new Response(200, [], json_encode([
+        $mockClient = Stub::make(Client::class, [
+            'post' => function () {
+                return new Response(200, [], json_encode([
                     'statusCode' => 200,
                     'message' => 'success',
                     'db-stats' => [
                         'total_links' => 1000,
                         'total_clicks' => 2000,
                     ],
-                ], JSON_THROW_ON_ERROR)),
-            );
+                ], JSON_THROW_ON_ERROR));
+            },
+        ]);
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $stats = $sdk->getGlobalStats();
-        $this->assertInstanceOf(YourlsGlobalStats::class, $stats);
+        $this->assertInstanceOf(GlobalStats::class, $stats);
         $this->assertSame(2000, $stats->getTotalClicks());
         $this->assertSame(1000, $stats->getTotalLinks());
     }
 
     public function testFindShortUrlsByLongUrl(): void
     {
-        $mockClient = $this->createMock(Client::class);
-        $mockClient
-            ->method('post')
-            ->willReturn(
-                new Response(200, [], json_encode([
+        $mockClient = Stub::make(Client::class, [
+            'post' => function () {
+                return new Response(200, [], json_encode([
                     'statusCode' => 200,
                     'message' => 'success',
-                    'keywords' => [
-                        '1x1',
-                        '2b2',
-                    ],
-                ], JSON_THROW_ON_ERROR)),
-            );
+                    'keywords' => ['1x1', '2b2'],
+                ], JSON_THROW_ON_ERROR));
+            },
+        ]);
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
-        $longUrlResponse = $sdk->findShortUrlsByLongUrl('https://example.com/directory/a');
-        $this->assertInstanceOf(FindLongUrlResponse::class, $longUrlResponse);
-        $this->assertSame(['http://sho.rt/1x1', 'http://sho.rt/2b2'], $longUrlResponse->shortUrls());
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
+        $shortUrlsByLongUrl = $sdk->findShortUrlsByLongUrl('https://example.com/directory/a');
+        $this->assertInstanceOf(FindLongUrl::class, $shortUrlsByLongUrl);
+        $this->assertSame([
+            0 => 'http://sho.rt/1x1',
+            1 => 'http://sho.rt/2b2',
+        ], $shortUrlsByLongUrl->shortUrls());
     }
 }
