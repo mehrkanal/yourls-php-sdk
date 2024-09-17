@@ -16,6 +16,7 @@ composer up
 vendor/bin/ecs
 vendor/bin/rector
 vendor/bin/phpstan
+composer run test
 ````
 
 ## Example Usage

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Mehrkanal\YourlsPhpSdk;
+namespace Mehrkanal\YourlsPhpSdk\YourlsResponse;
 
 use DateTimeImmutable;
 
-class YourlsUrlStats
+class UrlStats
 {
     private int $clicks;
 
@@ -18,7 +18,7 @@ class YourlsUrlStats
 
     private string $shortUrl;
 
-    public function __construct(YourlsResponse $response)
+    public function __construct(General $response)
     {
         $link = $response->getBody()['link'];
         $this->clicks = $link['clicks'];

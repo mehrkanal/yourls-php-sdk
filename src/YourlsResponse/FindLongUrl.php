@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Mehrkanal\YourlsPhpSdk;
+namespace Mehrkanal\YourlsPhpSdk\YourlsResponse;
 
-class FindLongUrlResponse
+class FindLongUrl
 {
     private array $shortUrls;
 
-    public function __construct(YourlsResponse $response, string $domain)
+    public function __construct(General $response, string $domain)
     {
         foreach ($response->getBody()['keywords'] as $shortUrl) {
             $this->shortUrls[] = $domain . '/' . $shortUrl;

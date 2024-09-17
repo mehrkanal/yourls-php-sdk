@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Mehrkanal\YourlsPhpSdk;
+namespace Mehrkanal\YourlsPhpSdk\YourlsResponse;
 
 use JetBrains\PhpStorm\ArrayShape;
 use Psr\Http\Message\ResponseInterface;
 
-class YourlsResponse
+class General
 {
     private array $body;
 

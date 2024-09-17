@@ -4,10 +4,11 @@ namespace Mehrkanal\YourlsPhpSdkTest;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\FindLongUrl;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\GlobalStats;
+use Mehrkanal\YourlsPhpSdk\YourlsResponse\UrlStats;
 use Mehrkanal\YourlsPhpSdk\YourlsSDK;
-use Mehrkanal\YourlsPhpSdk\YourlsUrlStats;
 use PHPUnit\Framework\TestCase;
-use ReflectionProperty;
 
 class YourlsSDKTest extends TestCase
 {
@@ -23,11 +24,7 @@ class YourlsSDKTest extends TestCase
                 ])),
             );
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $shortUrl = $sdk->generateShortUrl('http://example.com');
         $this->assertSame('http://sho.rt/1f', $shortUrl);
     }
@@ -44,11 +41,7 @@ class YourlsSDKTest extends TestCase
                 ])),
             );
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $longUrl = $sdk->expandShortUrl('short-keyword');
         $this->assertSame('http://example.com', $longUrl);
     }
@@ -72,13 +65,54 @@ class YourlsSDKTest extends TestCase
                 ], JSON_THROW_ON_ERROR)),
             );
 
-        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password');
-        $reflection = new ReflectionProperty($sdk, 'client');
-        $reflection->setAccessible(true);
-        $reflection->setValue($sdk, $mockClient);
-
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
         $stats = $sdk->getShortUrlStats('short-keyword');
-        $this->assertInstanceOf(YourlsUrlStats::class, $stats);
+        $this->assertInstanceOf(UrlStats::class, $stats);
         $this->assertSame(2, $stats->getClicks());
+    }
+
+    public function testGetGlobalStats(): void
+    {
+        $mockClient = $this->createMock(Client::class);
+        $mockClient
+            ->method('post')
+            ->willReturn(
+                new Response(200, [], json_encode([
+                    'statusCode' => 200,
+                    'message' => 'success',
+                    'db-stats' => [
+                        'total_links' => 1000,
+                        'total_clicks' => 2000,
+                    ],
+                ], JSON_THROW_ON_ERROR)),
+            );
+
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
+        $stats = $sdk->getGlobalStats();
+        $this->assertInstanceOf(GlobalStats::class, $stats);
+        $this->assertSame(2000, $stats->getTotalClicks());
+        $this->assertSame(1000, $stats->getTotalLinks());
+    }
+
+    public function testFindShortUrlsByLongUrl(): void
+    {
+        $mockClient = $this->createMock(Client::class);
+        $mockClient
+            ->method('post')
+            ->willReturn(
+                new Response(200, [], json_encode([
+                    'statusCode' => 200,
+                    'message' => 'success',
+                    'keywords' => ['1x1', '2b2'],
+                ], JSON_THROW_ON_ERROR)),
+            );
+
+        $sdk = new YourlsSDK('http://sho.rt/yourls-api.php', 'username', 'password', client: $mockClient);
+        $shortUrlsByLongUrl = $sdk->findShortUrlsByLongUrl('https://example.com/directory/a');
+        $this->assertInstanceOf(FindLongUrl::class, $shortUrlsByLongUrl);
+        $this->assertSame([
+            0 => 'http://sho.rt/1x1',
+            1 => 'http://sho.rt/2b2',
+        ], $shortUrlsByLongUrl->findShortUrls());
     }
 }
