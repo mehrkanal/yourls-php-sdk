@@ -45,7 +45,7 @@ try {
 
 try {
     $longUrl = $yourls->findShortUrlsByLongUrl('http://example.com');
-    foreach ($longUrl->findShortUrls() as $shortUrl) {
+    foreach ($longUrl->shortUrls() as $shortUrl) {
         echo $shortUrl . PHP_EOL;
     }
 } catch (Exception $e) {
